@@ -1,0 +1,925 @@
+/* ===========================
+   CSS Variables
+   =========================== */
+:root {
+    --sky-blue: #aed6f1;
+    --pitch-green: #27ae60;
+    --dark-bg: #1e272e;
+    --card-bg: #2f3542;
+    --input-bg: #3e4451;
+    --text-white: #ffffff;
+    --danger-red: #e74c3c;
+    --success-green: #27ae60;
+    --warning-yellow: #f1c40f;
+}
+
+/* ===========================
+   Base Styles
+   =========================== */
+* {
+    font-family: 'Assistant', sans-serif;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--dark-bg);
+    color: var(--text-white);
+    text-align: center;
+    margin: 0;
+    padding: 15px;
+}
+
+/* ===========================
+   Container & Layout
+   =========================== */
+.container {
+    max-width: 600px;
+    margin: auto;
+    background: var(--card-bg);
+    padding: 25px;
+    border-radius: 25px;
+    border: 4px solid var(--sky-blue);
+    position: relative;
+    min-height: 80vh;
+}
+
+/* ===========================
+   Section Management
+   =========================== */
+.section {
+    display: none;
+}
+
+.active {
+    display: block;
+    animation: fadeIn 0.5s;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ===========================
+   Identity/Login Overlay
+   =========================== */
+#identity-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.identity-btn {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+    border: none;
+    padding: 20px;
+    margin: 10px;
+    width: 80%;
+    max-width: 300px;
+    border-radius: 15px;
+    font-size: 1.5rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.identity-btn:hover {
+    transform: scale(1.05);
+    background: white;
+}
+
+.admin-btn {
+    background: var(--danger-red);
+    color: white;
+    margin-bottom: 30px;
+}
+
+#waiting-msg {
+    color: #ccc;
+    font-size: 0.9rem;
+    margin-top: 20px;
+    display: none;
+}
+
+/* ===========================
+   Form Inputs
+   =========================== */
+textarea,
+input[type="text"] {
+    width: 100%;
+    background: var(--input-bg);
+    color: white;
+    border: 2px solid var(--sky-blue);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px 0;
+    font-size: 1rem;
+}
+
+/* ===========================
+   Lottery/Pitch Styles
+   =========================== */
+.pitch {
+    background: var(--pitch-green);
+    height: 220px;
+    border-radius: 20px;
+    position: relative;
+    margin: 15px 0;
+    border: 3px solid white;
+    overflow: hidden;
+}
+
+.goal {
+    width: 130px;
+    height: 65px;
+    border: 4px solid white;
+    border-bottom: none;
+    margin: 35px auto 0;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ball-spot {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 40px;
+}
+
+.ball {
+    font-size: 2.5rem;
+    cursor: pointer;
+    transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: absolute;
+    left: 0;
+    bottom: 0;
+}
+
+.kick-top-corner {
+    transform: translate(-48px, -128px) scale(0.3) rotate(720deg);
+}
+
+.kick-center {
+    transform: translate(0, -125px) scale(0.3) rotate(720deg);
+}
+
+.kick-miss {
+    transform: translate(140px, -90px) scale(0.3) rotate(720deg);
+    opacity: 0;
+}
+
+/* ===========================
+   Player Cards
+   =========================== */
+.player-card {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+    padding: 8px 15px;
+    margin: 5px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-block;
+    font-weight: 800;
+    transition: transform 0.2s;
+}
+
+.player-card:hover {
+    transform: scale(1.05);
+}
+
+.player-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    background: #95a5a6;
+}
+
+/* ===========================
+   Buttons
+   =========================== */
+button.primary {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+    border: none;
+    padding: 15px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 800;
+    width: 100%;
+    font-size: 1.1rem;
+    margin-top: 10px;
+}
+
+.reset-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: none;
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+
+#undo-btn {
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+/* ===========================
+   Teams Display
+   =========================== */
+.teams-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.team-box {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid var(--sky-blue);
+    min-height: 150px;
+}
+
+.team-box h3 {
+    color: var(--sky-blue);
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.team-player {
+    font-size: 0.85rem;
+    text-align: right;
+    padding-right: 5px;
+}
+
+/* ===========================
+   Color Selection
+   =========================== */
+.color-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+}
+
+.color-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.color-btn {
+    background: var(--input-bg);
+    border: 1px solid white;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.selected-color {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
+/* ===========================
+   Final Teams Display
+   =========================== */
+.final-team-box {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 15px;
+    border-radius: 15px;
+    border: 2px solid var(--sky-blue);
+    margin: 10px 0;
+    text-align: center;
+}
+
+.final-team-box h3 {
+    margin: 0 0 10px 0;
+    color: var(--sky-blue);
+}
+
+/* ===========================
+   User Role Display
+   =========================== */
+#user-role-display {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 0.8rem;
+    color: var(--sky-blue);
+    opacity: 0.7;
+}
+
+/* ===========================
+   Custom Modal/Notification System
+   =========================== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.2s;
+}
+
+.modal-box {
+    background: var(--card-bg);
+    border: 3px solid var(--sky-blue);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    animation: modalPop 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes modalPop {
+    0% {
+        transform: scale(0.7);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.modal-message {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--text-white);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.modal-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.modal-btn:hover {
+    transform: scale(1.05);
+}
+
+.modal-btn-primary {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+}
+
+.modal-btn-secondary {
+    background: var(--input-bg);
+    color: var(--text-white);
+    border: 1px solid var(--sky-blue);
+}
+
+.modal-btn-danger {
+    background: var(--danger-red);
+    color: white;
+}
+
+/* Toast Notifications */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--card-bg);
+    border: 2px solid var(--sky-blue);
+    border-radius: 15px;
+    padding: 15px 25px;
+    z-index: 10001;
+    animation: slideInRight 0.3s, slideOutRight 0.3s 2.7s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.toast-success {
+    border-color: var(--success-green);
+}
+
+.toast-error {
+    border-color: var(--danger-red);
+}
+
+.toast-info {
+    border-color: var(--sky-blue);
+}
+
+/* ===========================
+   Loading Spinner
+   =========================== */
+.spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--sky-blue);
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(30, 39, 46, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 25px;
+    z-index: 100;
+}
+
+.loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 5px solid rgba(174, 214, 241, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--sky-blue);
+    animation: spin 1s linear infinite;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+button.loading {
+    position: relative;
+    color: transparent;
+}
+
+button.loading::after {
+    content: "";
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    top: 50%;
+    left: 50%;
+    margin-left: -8px;
+    margin-top: -8px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--dark-bg);
+    animation: spin 0.8s linear infinite;
+}
+
+/* ===========================
+   Enhanced Turn Indicator
+   =========================== */
+#turn-display {
+    position: relative;
+    overflow: hidden;
+}
+
+#turn-display.my-turn {
+    animation: pulseGlow 2s infinite;
+    box-shadow: 0 0 20px rgba(39, 174, 96, 0.6);
+}
+
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(39, 174, 96, 0.6);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(39, 174, 96, 0.9);
+    }
+}
+
+#turn-display.my-turn::before {
+    content: "✨";
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    animation: sparkle 1.5s infinite;
+}
+
+@keyframes sparkle {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+/* ===========================
+   Smooth Section Transitions
+   =========================== */
+.section {
+    display: none;
+}
+
+.active {
+    display: block;
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Player card pick animation */
+.player-card.picking {
+    animation: pickPulse 0.3s;
+}
+
+@keyframes pickPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+/* Team player addition animation */
+.team-player {
+    animation: slideInPlayer 0.4s ease-out;
+}
+
+@keyframes slideInPlayer {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ===========================
+   Sound Toggle Button
+   =========================== */
+#sound-toggle {
+    position: absolute;
+    top: 50px;
+    left: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--sky-blue);
+    color: var(--sky-blue);
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    transition: all 0.3s;
+}
+
+#sound-toggle:hover {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+}
+
+#sound-toggle.muted {
+    opacity: 0.5;
+}
+
+/* ===========================
+   Player Search
+   =========================== */
+#player-search {
+    width: 100%;
+    background: var(--input-bg);
+    color: white;
+    border: 2px solid var(--sky-blue);
+    border-radius: 15px;
+    padding: 12px 15px;
+    margin: 10px 0;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+#player-search:focus {
+    outline: none;
+    border-color: var(--warning-yellow);
+    box-shadow: 0 0 10px rgba(241, 196, 15, 0.3);
+}
+
+#player-search::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.search-stats {
+    font-size: 0.85rem;
+    color: var(--sky-blue);
+    margin: 5px 0;
+    opacity: 0.8;
+}
+
+/* ===========================
+   Pick History Timeline
+   =========================== */
+.history-toggle {
+    background: var(--input-bg);
+    border: 1px solid var(--sky-blue);
+    color: var(--sky-blue);
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin: 10px 0;
+    transition: all 0.3s;
+}
+
+.history-toggle:hover {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+}
+
+.history-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px 0;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 2px solid var(--sky-blue);
+}
+
+.history-item {
+    background: rgba(174, 214, 241, 0.1);
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 10px;
+    border-left: 3px solid var(--sky-blue);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideInPlayer 0.3s ease-out;
+}
+
+.history-item:nth-child(odd) {
+    background: rgba(174, 214, 241, 0.15);
+}
+
+.history-number {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+.history-details {
+    flex: 1;
+    padding: 0 10px;
+    text-align: right;
+}
+
+.history-undo-btn {
+    background: var(--danger-red);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: transform 0.2s;
+}
+
+.history-undo-btn:hover {
+    transform: scale(1.1);
+}
+
+/* ===========================
+   Draft Timer
+   =========================== */
+.timer-container {
+    background: var(--card-bg);
+    border: 2px solid var(--sky-blue);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.timer-display {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--sky-blue);
+    margin: 10px 0;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-display.warning {
+    color: var(--warning-yellow);
+    animation: timerPulse 1s infinite;
+}
+
+.timer-display.critical {
+    color: var(--danger-red);
+    animation: timerPulse 0.5s infinite;
+}
+
+@keyframes timerPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.timer-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.timer-btn {
+    background: var(--input-bg);
+    border: 1px solid var(--sky-blue);
+    color: var(--sky-blue);
+    padding: 8px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.timer-btn:hover {
+    background: var(--sky-blue);
+    color: var(--dark-bg);
+}
+
+.timer-btn.active {
+    background: var(--success-green);
+    color: white;
+    border-color: var(--success-green);
+}
+
+/* ===========================
+   Keyboard Shortcuts Help
+   =========================== */
+.shortcuts-hint {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(47, 53, 66, 0.9);
+    border: 1px solid var(--sky-blue);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 0.75rem;
+    color: var(--sky-blue);
+    max-width: 200px;
+    opacity: 0.7;
+    transition: opacity 0.3s;
+    z-index: 50;
+}
+
+.shortcuts-hint:hover {
+    opacity: 1;
+}
+
+.shortcut-key {
+    background: var(--input-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    margin: 0 2px;
+}
+
+/* ===========================
+   Statistics Panel
+   =========================== */
+.stats-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 15px;
+    margin: 10px 0;
+    border: 2px solid var(--sky-blue);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-label {
+    color: var(--sky-blue);
+    font-weight: 600;
+}
+
+.stat-value {
+    color: var(--text-white);
+    font-weight: 800;
+}
+
+/* ===========================
+   Responsive Design
+   =========================== */
+@media (max-width: 600px) {
+    .teams-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .container {
+        padding: 15px;
+    }
+
+    .identity-btn {
+        font-size: 1.2rem;
+        padding: 15px;
+    }
+
+    .modal-box {
+        padding: 20px;
+    }
+
+    .toast {
+        right: 10px;
+        left: 10px;
+        top: 10px;
+    }
+}
+
+@media (max-width: 400px) {
+    .pitch {
+        height: 180px;
+    }
+
+    .goal {
+        width: 100px;
+        height: 50px;
+    }
+}

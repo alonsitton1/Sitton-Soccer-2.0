@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sitton Soccer INC - SMART LOGIN</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;800&display=swap" rel="stylesheet">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Identity/Login Overlay -->
+<div id="identity-overlay">
+    <h2 style="color: white; margin-bottom: 20px;">⚽ מי אתה?</h2>
+    <button class="identity-btn admin-btn" onclick="setIdentity('admin')">👑 מנהל המשחק</button>
+    <button id="btn-cap-0" class="identity-btn" onclick="setIdentity(0)">קפטן 1</button>
+    <button id="btn-cap-1" class="identity-btn" onclick="setIdentity(1)">קפטן 2</button>
+    <button id="btn-cap-2" class="identity-btn" onclick="setIdentity(2)">קפטן 3</button>
+    <div id="waiting-msg">ממתין שהמנהל יזין שמות... <span style="font-size:1.5rem">⏳</span></div>
+</div>
+
+<!-- Main Container -->
+<div class="container">
+    <!-- Admin Controls -->
+    <button id="admin-reset-btn" class="reset-btn" onclick="resetGame()" style="display:none;">אפס 🔄</button>
+    <button id="sound-toggle" onclick="toggleSound()">🔊 קול</button>
+    <div id="user-role-display"></div>
+
+    <h1>SITTON SOCCER INC</h1>
+
+    <!-- Setup Section -->
+    <div id="setup" class="section active">
+        <p style="color: yellow; font-size: 0.9rem;">רק המנהל רואה את המסך הזה</p>
+        <textarea id="player-input" placeholder="רשימת שחקנים..."></textarea>
+        <input type="text" id="cap-input" placeholder="3 קפטנים (מופרדים בפסיק)">
+        <button class="primary" onclick="goToLottery()">לפנדלים 🎯</button>
+    </div>
+
+    <!-- Lottery Section -->
+    <div id="lottery" class="section">
+        <h2 id="lottery-instruction"></h2>
+        <div class="pitch">
+            <div class="goal"></div>
+            <div class="ball-spot">
+                <div class="ball" id="kicking-ball" onclick="shoot()">⚽</div>
+            </div>
+        </div>
+        <div id="lottery-results" style="font-weight: 800; color: #f194ff; margin: 10px;"></div>
+        <button id="start-draft-btn" class="primary" onclick="startDraft()" style="display:none;">לבחירה ⚽</button>
+    </div>
+
+    <!-- Draft Section -->
+    <div id="draft" class="section">
+        <div id="turn-display" style="padding: 10px; border-radius: 10px; font-weight: bold; font-size: 1.2rem; margin-bottom: 15px;"></div>
+
+        <!-- Timer (shown when enabled and it's your turn) -->
+        <div id="timer-container" class="timer-container" style="display:none;">
+            <div>⏱️ זמן נותר</div>
+            <div id="timer-display" class="timer-display">30s</div>
+        </div>
+
+        <!-- Control Buttons -->
+        <div style="display: flex; gap: 5px; margin: 10px 0; flex-wrap: wrap; justify-content: center;">
+            <button id="history-toggle" class="history-toggle" onclick="toggleHistory()" style="display:none;">📜 הצג היסטוריה</button>
+            <button id="timer-toggle-btn" class="timer-btn" onclick="toggleTimer()" style="display:none;">⏱️ טיימר כבוי</button>
+            <button id="undo-btn" onclick="undoLastPick()" style="display:none;">↩️ בטל בחירה</button>
+        </div>
+
+        <!-- Pick History Panel -->
+        <div id="history-panel" class="history-panel" style="display:none;"></div>
+
+        <!-- Available Players -->
+        <div id="available-players"></div>
+
+        <!-- Teams Grid -->
+        <div class="teams-grid">
+            <div class="team-box">
+                <h3 id="cap-0-name"></h3>
+                <div id="team-0-list"></div>
+            </div>
+            <div class="team-box">
+                <h3 id="cap-1-name"></h3>
+                <div id="team-1-list"></div>
+            </div>
+            <div class="team-box">
+                <h3 id="cap-2-name"></h3>
+                <div id="team-2-list"></div>
+            </div>
+        </div>
+
+        <!-- Statistics Panel -->
+        <div class="stats-panel" id="stats-panel" style="margin-top: 20px;"></div>
+    </div>
+
+    <!-- Colors Section -->
+    <div id="colors" class="section">
+        <h2>🎨 בחירת צבעים</h2>
+        <h4 style="color:var(--sky-blue); margin-bottom: 10px;">(מתחילים ממי שבחר אחרון)</h4>
+        <div class="color-row">
+            <h3 id="color-cap-0-name"></h3>
+            <div id="color-select-0"></div>
+        </div>
+        <div class="color-row">
+            <h3 id="color-cap-1-name"></h3>
+            <div id="color-select-1"></div>
+        </div>
+        <div class="color-row">
+            <h3 id="color-cap-2-name"></h3>
+            <div id="color-select-2"></div>
+        </div>
+        <button id="finish-colors-btn" class="primary" onclick="finishColors()" style="display:none;">סיום וסיכום ✅</button>
+    </div>
+
+    <!-- Final Section -->
+    <div id="final" class="section">
+        <h2>🏆 הכוחות מוכנים!</h2>
+        <div class="final-team-box">
+            <h3><span id="final-team-0-color"></span> <span id="final-cap-0-name"></span></h3>
+            <div id="final-team-0-list"></div>
+        </div>
+        <div class="final-team-box">
+            <h3><span id="final-team-1-color"></span> <span id="final-cap-1-name"></span></h3>
+            <div id="final-team-1-list"></div>
+        </div>
+        <div class="final-team-box">
+            <h3><span id="final-team-2-color"></span> <span id="final-cap-2-name"></span></h3>
+            <div id="final-team-2-list"></div>
+        </div>
+        <button class="primary" onclick="copyFinal()">העתק לוואטסאפ 📋</button>
+    </div>
+</div>
+
+<!-- Application Script -->
+<script src="app.js"></script>
+
+</body>
+</html>
