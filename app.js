@@ -1421,23 +1421,15 @@ async function renderDraft() {
         }
     }
 
-    // Render available players — first render immediately with no stats (fast),
-    // then fetch all stats in a single batch and re-render with stats.
+    // Render available players
     const disabledClass = !isMyTurn ? 'disabled' : '';
-    const placeholderCards = gameState.players.map(p =>
+    const playerCards = gameState.players.map(p =>
         `<div class="player-card ${disabledClass}" onclick="pickPlayer('${p}')">
             <div class="player-name">${p}</div>
         </div>`
     );
-    setHTML('available-players', placeholderCards.join(''));
-
-    // No stats overlay on cards — just render the names cleanly
-    const playerCards = gameState.players.map(p => `
-        <div class="player-card ${disabledClass}" onclick="pickPlayer('${p}')">
-            <div class="player-name">${p}</div>
-        </div>
-    `);
     setHTML('available-players', playerCards.join(''));
+    setupPlayerCardTouchDelegation(); // Re-attach after every render
 
     // Show/hide timer
     const timerContainer = getElement('timer-container');
@@ -1565,32 +1557,41 @@ function renderFinal() {
 // ===========================
 // Delegate touch events on player cards to avoid 300ms iOS click delay
 // and prevent ghost taps from propagating.
+// Store touch handlers so we can remove and re-add without stacking duplicates
+let _touchHandlers = null;
+
 function setupPlayerCardTouchDelegation() {
     const container = document.getElementById('available-players');
     if (!container) return;
 
+    // Remove previous listeners to avoid stacking duplicates
+    if (_touchHandlers) {
+        container.removeEventListener('touchstart', _touchHandlers.start);
+        container.removeEventListener('touchmove', _touchHandlers.move);
+        container.removeEventListener('touchend', _touchHandlers.end);
+    }
+
     let touchMoved = false;
 
-    container.addEventListener('touchstart', function(e) {
-        touchMoved = false;
-    }, { passive: true });
-
-    container.addEventListener('touchmove', function(e) {
-        touchMoved = true;
-    }, { passive: true });
-
-    container.addEventListener('touchend', function(e) {
-        if (touchMoved) return; // User was scrolling, not tapping
-        const card = e.target.closest('.player-card');
-        if (!card || card.classList.contains('disabled')) return;
-        e.preventDefault(); // Prevent the 300ms delayed click
-        const onclick = card.getAttribute('onclick');
-        if (onclick) {
-            // Extract player name from onclick="pickPlayer('NAME')"
-            const match = onclick.match(/pickPlayer\('(.+)'\)/);
-            if (match) pickPlayer(match[1]);
+    _touchHandlers = {
+        start: function(e) { touchMoved = false; },
+        move: function(e) { touchMoved = true; },
+        end: function(e) {
+            if (touchMoved) return;
+            const card = e.target.closest('.player-card');
+            if (!card || card.classList.contains('disabled')) return;
+            e.preventDefault();
+            const onclick = card.getAttribute('onclick');
+            if (onclick) {
+                const match = onclick.match(/pickPlayer\('(.+)'\)/);
+                if (match) pickPlayer(match[1]);
+            }
         }
-    }, { passive: false });
+    };
+
+    container.addEventListener('touchstart', _touchHandlers.start, { passive: true });
+    container.addEventListener('touchmove', _touchHandlers.move, { passive: true });
+    container.addEventListener('touchend', _touchHandlers.end, { passive: false });
 }
 
 // ===========================
