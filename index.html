@@ -13,7 +13,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <!-- Styles -->
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2.1">
 </head>
 <body>
 
@@ -32,7 +32,7 @@
     <!-- Admin Controls -->
     <button id="admin-reset-btn" class="reset-btn" onclick="resetGame()" style="display:none;">אפס 🔄</button>
     <button id="sound-toggle" onclick="toggleSound()">🔊 קול</button>
-    <div id="user-role-display"></div>
+    <div id="user-role-display" onclick="switchIdentity()" style="cursor:pointer;" title="לחץ להחלפת זהות"></div>
 
     <h1>SITTON SOCCER INC</h1>
 
@@ -162,7 +162,8 @@
 <button id="view-stats-btn" class="stats-nav-btn" onclick="viewStatistics()">📊</button>
 
 <!-- Application Script -->
-<script src="app.js"></script>
+<!-- Bump ?v= on every deploy so phones don't run a stale cached app.js -->
+<script src="app.js?v=2.1"></script>
 
 </body>
 </html>

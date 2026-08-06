@@ -52,6 +52,9 @@ const DEFAULT_STATE = {
     players: [],
     initialCaptains: [],
     sortedCaptains: ["", "", ""],
+    // captainSlots[loginIdx] = team/sorted index assigned by the lottery.
+    // -1 = that captain has not kicked yet.
+    captainSlots: [-1, -1, -1],
     teams: [[], [], []],
     teamColors: ["", "", ""],
     lotteryResults: [],
@@ -109,6 +112,7 @@ function handleFirebaseUpdate(snapshot) {
     const data = snapshot.val();
     if (data) {
         gameState = normalizeState(data);
+        restoreIdentity(); // no-op if already logged in this session
         renderUI();
         updateLoginButtons();
     }
@@ -141,6 +145,9 @@ function normalizeState(state) {
         players: Array.isArray(state.players) ? state.players : [],
         initialCaptains: Array.isArray(state.initialCaptains) ? state.initialCaptains : [],
         sortedCaptains: Array.isArray(state.sortedCaptains) ? state.sortedCaptains : ["", "", ""],
+        captainSlots: (Array.isArray(state.captainSlots) && state.captainSlots.length === 3)
+            ? state.captainSlots.map(v => (typeof v === 'number' ? v : -1))
+            : [-1, -1, -1],
         teams: safeTeams,
         teamColors: Array.isArray(state.teamColors) ? state.teamColors : ["", "", ""],
         lotteryResults: Array.isArray(state.lotteryResults) ? state.lotteryResults : [],
@@ -155,13 +162,85 @@ function normalizeState(state) {
 // ===========================
 // IDENTITY & PERMISSIONS
 // ===========================
-function setIdentity(role) {
+const IDENTITY_KEY = 'sitton_soccer_identity';
+const IDENTITY_TTL = 12 * 60 * 60 * 1000; // 12 hours
+
+function applyIdentity(role) {
     myRole = role;
     hideElement('identity-overlay');
 
     const roleName = getRoleName(role);
-    setText('user-role-display', "שלום, " + roleName);
+    setText('user-role-display', "שלום, " + roleName + " (החלף)");
     renderUI();
+}
+
+function setIdentity(role) {
+    applyIdentity(role);
+    saveIdentity();
+}
+
+function saveIdentity() {
+    try {
+        localStorage.setItem(IDENTITY_KEY, JSON.stringify({
+            role: myRole,
+            captainsSig: (gameState.initialCaptains || []).join('|'),
+            timestamp: Date.now()
+        }));
+    } catch (e) {
+        console.warn('Identity save failed:', e);
+    }
+}
+
+function clearIdentity() {
+    try {
+        localStorage.removeItem(IDENTITY_KEY);
+    } catch (e) {
+        console.warn('Identity clear failed:', e);
+    }
+}
+
+// Re-apply a saved identity after a refresh / phone killing the tab.
+// Only restores when it's clearly the SAME game (captain names unchanged).
+function restoreIdentity() {
+    if (myRole !== null) return false;
+
+    let data;
+    try {
+        const raw = localStorage.getItem(IDENTITY_KEY);
+        if (!raw) return false;
+        data = JSON.parse(raw);
+    } catch (e) {
+        return false;
+    }
+
+    if (!data || typeof data.timestamp !== 'number') return false;
+    if (Date.now() - data.timestamp > IDENTITY_TTL) {
+        clearIdentity();
+        return false;
+    }
+
+    const currentSig = (gameState.initialCaptains || []).join('|');
+    if (!currentSig) return false; // names not synced yet - retry on next update
+
+    if (data.captainsSig !== currentSig) {
+        clearIdentity(); // different game, force a fresh login
+        return false;
+    }
+
+    applyIdentity(data.role);
+    return true;
+}
+
+// Escape hatch for a mis-tap: send this device back to the login screen.
+async function switchIdentity() {
+    const confirmed = await showConfirm("לחזור למסך בחירת הזהות?", "🔄");
+    if (!confirmed) return;
+
+    clearIdentity();
+    myRole = null;
+    setText('user-role-display', "");
+    showElement('identity-overlay');
+    updateLoginButtons();
 }
 
 function getRoleName(role) {
@@ -173,21 +252,54 @@ function getRoleName(role) {
     return capName;
 }
 
+// ---------------------------------------------------------------
+// IMPORTANT: there are TWO index spaces in this app.
+//
+//   loginIdx  (myRole 0/1/2) -> position in initialCaptains,
+//                               i.e. the order the admin typed the names.
+//   teamIdx   (0/1/2)        -> position in sortedCaptains / teams / teamColors,
+//                               i.e. the slot won in the penalty lottery.
+//
+// DRAFT_ORDER and COLOR_DRAFT_ORDER are expressed in teamIdx.
+// Never compare myRole against them directly - translate first.
+// ---------------------------------------------------------------
+function getMyTeamIndex() {
+    if (myRole === ROLES.ADMIN) return null;
+    if (myRole !== 0 && myRole !== 1 && myRole !== 2) return null;
+
+    // Preferred: explicit mapping recorded when this captain took his kick.
+    const slot = gameState.captainSlots ? gameState.captainSlots[myRole] : -1;
+    if (typeof slot === 'number' && slot >= 0) return slot;
+
+    // Fallback for games that started before captainSlots existed:
+    // match by name. Trimmed compare, and only trusted when unambiguous.
+    const myName = (gameState.initialCaptains && gameState.initialCaptains[myRole] || '').trim();
+    if (!myName) return null;
+
+    const matches = [];
+    (gameState.sortedCaptains || []).forEach((name, idx) => {
+        if ((name || '').trim() === myName) matches.push(idx);
+    });
+    return matches.length === 1 ? matches[0] : null;
+}
+
 function checkTurn(actionType) {
     if (myRole === ROLES.ADMIN) return true;
 
     if (actionType === 'lottery') {
+        // The lottery runs in login order, so myRole is the right index here.
         return myRole === gameState.lotteryClickCount;
     }
 
+    const myTeamIdx = getMyTeamIndex();
+    if (myTeamIdx === null) return false;
+
     if (actionType === 'draft') {
-        const currentTurnCapIdx = DRAFT_ORDER[gameState.currentPickStep];
-        return myRole === currentTurnCapIdx;
+        return myTeamIdx === DRAFT_ORDER[gameState.currentPickStep];
     }
 
     if (actionType === 'color') {
-        const currentTurnCapIdx = COLOR_DRAFT_ORDER[gameState.colorPickStep];
-        return myRole === currentTurnCapIdx;
+        return myTeamIdx === COLOR_DRAFT_ORDER[gameState.colorPickStep];
     }
 
     return false;
@@ -1015,7 +1127,22 @@ async function goToLottery() {
         return;
     }
 
-    const initialCaptains = rawCaps.split(',').map(s => s.trim());
+    const initialCaptains = rawCaps.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+    if (initialCaptains.length !== 3) {
+        await showAlert("צריך בדיוק 3 קפטנים, מופרדים בפסיק", "⚠️");
+        hideLoading();
+        isProcessing = false;
+        return;
+    }
+
+    if (new Set(initialCaptains).size !== 3) {
+        await showAlert("שמות הקפטנים חייבים להיות שונים זה מזה", "⚠️");
+        hideLoading();
+        isProcessing = false;
+        return;
+    }
+
     let tempPlayers = rawPlayers
         .replace(/^\d+[:.]?/, '')
         .split(/[,\n]/)
@@ -1068,12 +1195,18 @@ async function shoot() {
     const newSortedCaptains = [...gameState.sortedCaptains];
     newSortedCaptains[pos] = capName;
 
+    // Record which team slot this captain won, keyed by his LOGIN index.
+    // This is what lets checkTurn() translate myRole -> team index later.
+    const newCaptainSlots = [...(gameState.captainSlots || [-1, -1, -1])];
+    newCaptainSlots[clickIndex] = pos;
+
     const resultText = LOTTERY_RESULT_MESSAGES[pos];
     const newResults = [...gameState.lotteryResults, `${capName}: ${resultText}`];
 
     await updateFirebase({
         ...gameState,
         sortedCaptains: newSortedCaptains,
+        captainSlots: newCaptainSlots,
         lotteryResults: newResults,
         lotteryClickCount: clickIndex + 1
     });
@@ -1310,6 +1443,8 @@ async function resetGame() {
     if (confirmed) {
         showLoading();
         await gameRef.set(null);
+        clearLocalStorageBackup();
+        clearIdentity();
         location.reload();
     }
 }
@@ -1506,6 +1641,7 @@ async function renderDraft() {
 function renderColors() {
     const currentPickerIdx = COLOR_DRAFT_ORDER[gameState.colorPickStep];
     const isFinished = gameState.colorPickStep >= 3;
+    const myTeamIdx = getMyTeamIndex();
 
     for (let i = 0; i < 3; i++) {
         setText(`color-cap-${i}-name`, gameState.sortedCaptains[i]);
@@ -1515,7 +1651,7 @@ function renderColors() {
         if (currentColor && currentColor !== "") {
             setHTML(`color-select-${i}`, `<div class="selected-color">${currentColor}</div>`);
         } else if (i === currentPickerIdx && !isFinished) {
-            if (myRole === currentPickerIdx || myRole === ROLES.ADMIN) {
+            if (myTeamIdx === currentPickerIdx || myRole === ROLES.ADMIN) {
                 let buttonsHtml = '<div class="color-buttons">';
                 AVAILABLE_COLORS.forEach(opt => {
                     const isTaken = gameState.teamColors.some(taken => taken.includes(opt.name));
@@ -1619,6 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // EXPOSE FUNCTIONS TO WINDOW
 // ===========================
 window.setIdentity = setIdentity;
+window.switchIdentity = switchIdentity;
 window.goToLottery = goToLottery;
 window.shoot = shoot;
 window.startDraft = startDraft;
