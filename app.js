@@ -73,6 +73,9 @@ const LOTTERY_RESULT_MESSAGES = {
 
 const ANIMATION_DURATION = 1100;
 
+// Bump this AND the ?v= query strings in index.html on every deploy.
+const APP_VERSION = "2.2";
+
 // ===========================
 // GLOBAL STATE
 // ===========================
@@ -110,12 +113,15 @@ function initializeFirebase() {
 
 function handleFirebaseUpdate(snapshot) {
     const data = snapshot.val();
-    if (data) {
-        gameState = normalizeState(data);
-        restoreIdentity(); // no-op if already logged in this session
-        renderUI();
-        updateLoginButtons();
-    }
+
+    // data === null means the database is empty (fresh project, or just reset).
+    // Previously this branch did nothing at all, leaving the hardcoded
+    // "קפטן 1/2/3" buttons on screen looking ready to tap.
+    gameState = data ? normalizeState(data) : { ...DEFAULT_STATE };
+
+    restoreIdentity(); // no-op if already logged in this session
+    renderUI();
+    updateLoginButtons();
 }
 
 async function updateFirebase(newState) {
@@ -174,7 +180,13 @@ function applyIdentity(role) {
     renderUI();
 }
 
-function setIdentity(role) {
+async function setIdentity(role) {
+    // Captains can only log in once the admin has entered the names.
+    if (role !== ROLES.ADMIN && !captainNamesReady()) {
+        await showAlert("המנהל עדיין לא הזין את השמות. חכה רגע ⏳", "⏳");
+        return;
+    }
+
     applyIdentity(role);
     saveIdentity();
 }
@@ -1452,20 +1464,36 @@ async function resetGame() {
 // ===========================
 // UI RENDERING
 // ===========================
+function captainNamesReady() {
+    return Array.isArray(gameState.initialCaptains)
+        && gameState.initialCaptains.length === 3
+        && gameState.initialCaptains.every(n => (n || '').trim().length > 0);
+}
+
 function updateLoginButtons() {
-    if (gameState.initialCaptains && gameState.initialCaptains.length === 3) {
-        setText('btn-cap-0', "⚽ אני " + gameState.initialCaptains[0]);
-        setText('btn-cap-1', "⚽ אני " + gameState.initialCaptains[1]);
-        setText('btn-cap-2', "⚽ אני " + gameState.initialCaptains[2]);
+    const ready = captainNamesReady();
+
+    for (let i = 0; i < 3; i++) {
+        const btn = getElement('btn-cap-' + i);
+        if (!btn) continue;
+
+        if (ready) {
+            btn.textContent = "⚽ אני " + gameState.initialCaptains[i];
+            btn.disabled = false;
+            btn.classList.remove('waiting');
+        } else {
+            // Genuinely disabled, not just relabelled - a captain who taps
+            // before the admin has set up the game used to end up in a
+            // half-broken state with no captain names.
+            btn.textContent = "⏳ ממתין למנהל...";
+            btn.disabled = true;
+            btn.classList.add('waiting');
+        }
+    }
+
+    if (ready) {
         hideElement('waiting-msg');
-        // Show captain buttons now that we have names
-        showElement('btn-cap-0');
-        showElement('btn-cap-1');
-        showElement('btn-cap-2');
     } else {
-        setText('btn-cap-0', "⏳ טוען...");
-        setText('btn-cap-1', "⏳ טוען...");
-        setText('btn-cap-2', "⏳ טוען...");
         showElement('waiting-msg');
     }
 }
@@ -1734,6 +1762,9 @@ function setupPlayerCardTouchDelegation() {
 // INITIALIZE ON LOAD
 // ===========================
 document.addEventListener('DOMContentLoaded', () => {
+    setText('version-badge', "v" + APP_VERSION);
+    updateLoginButtons(); // show the waiting state immediately, before Firebase replies
+
     initializeFirebase();
     setupPlayerCardTouchDelegation();
 

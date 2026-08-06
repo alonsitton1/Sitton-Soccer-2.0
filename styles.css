@@ -168,11 +168,44 @@ h1 {
     box-shadow: 0 0 20px rgba(255, 71, 87, 0.4);
 }
 
+/* Captain buttons before the admin has entered names */
+.identity-btn:disabled,
+.identity-btn.waiting {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+    color: #999;
+}
+
+.identity-btn:disabled:hover,
+.identity-btn:disabled:active,
+.identity-btn.waiting:hover,
+.identity-btn.waiting:active {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.03);
+}
+
 #waiting-msg {
     color: #888;
     font-size: 0.9rem;
     margin-top: 20px;
     display: none;
+}
+
+/* Version badge - sits above the identity overlay so it's always readable */
+#version-badge {
+    position: fixed;
+    bottom: 6px;
+    left: 8px;
+    z-index: 10002;
+    font-size: 0.7rem;
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.35);
+    pointer-events: none;
+    user-select: none;
 }
 
 /* ===========================
